@@ -50,33 +50,23 @@ def index():
 
 
 # Add a new student
+
 @app.route("/add", methods=["POST"])
 def add_student():
-
-    name = request.form.get("name", "").strip()
-    student_id = request.form.get("student_id", "").strip()
-    course = request.form.get("course", "").strip()
-
-    if not name or not student_id or not course:
-        return "All fields are required", 400
+    name = request.form["name"]
+    student_id = request.form["student_id"]
+    course = request.form["course"]
 
     conn = get_db()
-
-    try:
-        conn.execute(
-            "INSERT INTO students (name, student_id, course) VALUES (?, ?, ?)",
-            (name, student_id, course)
-        )
-
-        conn.commit()
-
-    except sqlite3.IntegrityError:
-        conn.close()
-        return "Student ID already exists", 400
-
+    conn.execute(
+        "INSERT INTO students (name, student_id, course) VALUES (?, ?, ?)",
+        (name, student_id, course)
+    )
+    conn.commit()
     conn.close()
 
-    return redirect(url_for("index"))
+    return redirect("/")
+
 
 
 # Update an existing student
