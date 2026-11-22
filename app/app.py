@@ -44,29 +44,65 @@ def index():
 
     conn.close()
 
-    # CHANGE 1:
-    # Send student records to the HTML template
     return render_template("index.html", students=students)
 
 
 # Add a new student
-
 @app.route("/add", methods=["POST"])
 def add_student():
-    name = request.form["name"]
-    student_id = request.form["student_id"]
-    course = request.form["course"]
+
+    name = request.form.get("name", "").strip()
+
+    # Accept either student_id or email from the HTML form
+    student_id = request.form.get("student_id", "").strip()
+
+    if not student_id:
+        student_id = request.form.get("email", "").strip()
+
+    course = request.form.get("course", "").strip()
+
+    if not name or not student_id or not course:
+        return "Please fill in all fields", 400
 
     conn = get_db()
-    conn.execute(
-        "INSERT INTO students (name, student_id, course) VALUES (?, ?, ?)",
-        (name, student_id, course)
-    )
-    conn.commit()
+
+    try:
+        conn.execute(
+            """
+            INSERT INTO students (name, student_id, course)
+            VALUES (?, ?, ?)
+            """,
+            (name, student_id, course)
+        )
+
+        conn.commit()
+
+    except sqlite3.IntegrityError:
+        conn.close()
+        return "Student ID or email already exists", 400
+
     conn.close()
 
-    return redirect("/")
+    return redirect(url_for("index"))
 
+
+# Open the Update Student page
+@app.route("/update/<int:id>", methods=["GET"])
+def edit_student(id):
+
+    conn = get_db()
+
+    student = conn.execute(
+        "SELECT * FROM students WHERE id = ?",
+        (id,)
+    ).fetchone()
+
+    conn.close()
+
+    if student is None:
+        return "Student not found", 404
+
+    return render_template("update.html", student=student)
 
 
 # Update an existing student
@@ -75,6 +111,10 @@ def update_student(id):
 
     name = request.form.get("name", "").strip()
     student_id = request.form.get("student_id", "").strip()
+
+    if not student_id:
+        student_id = request.form.get("email", "").strip()
+
     course = request.form.get("course", "").strip()
 
     if not name or not student_id or not course:
@@ -84,9 +124,11 @@ def update_student(id):
 
     try:
         result = conn.execute(
-            """UPDATE students
-               SET name = ?, student_id = ?, course = ?
-               WHERE id = ?""",
+            """
+            UPDATE students
+            SET name = ?, student_id = ?, course = ?
+            WHERE id = ?
+            """,
             (name, student_id, course, id)
         )
 
@@ -112,7 +154,8 @@ def delete_student(id):
     conn = get_db()
 
     conn.execute(
-        "DELETE FROM students WHERE id = ?", (id,)
+        "DELETE FROM students WHERE id = ?",
+        (id,)
     )
 
     conn.commit()
