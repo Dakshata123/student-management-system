@@ -33,7 +33,7 @@ def init_db():
     conn.close()
 
 
-# Home page: display all students
+# Home page: Display all students
 @app.route("/")
 def index():
     conn = get_db()
@@ -50,19 +50,12 @@ def index():
 # Add a new student
 @app.route("/add", methods=["POST"])
 def add_student():
-
     name = request.form.get("name", "").strip()
-
-    # Accept either student_id or email from the HTML form
     student_id = request.form.get("student_id", "").strip()
-
-    if not student_id:
-        student_id = request.form.get("email", "").strip()
-
     course = request.form.get("course", "").strip()
 
     if not name or not student_id or not course:
-        return "Please fill in all fields", 400
+        return "All fields are required", 400
 
     conn = get_db()
 
@@ -79,42 +72,18 @@ def add_student():
 
     except sqlite3.IntegrityError:
         conn.close()
-        return "Student ID or email already exists", 400
+        return "Student ID already exists", 400
 
     conn.close()
 
     return redirect(url_for("index"))
 
 
-# Open the Update Student page
-@app.route("/update/<int:id>", methods=["GET"])
-def edit_student(id):
-
-    conn = get_db()
-
-    student = conn.execute(
-        "SELECT * FROM students WHERE id = ?",
-        (id,)
-    ).fetchone()
-
-    conn.close()
-
-    if student is None:
-        return "Student not found", 404
-
-    return render_template("update.html", student=student)
-
-
 # Update an existing student
 @app.route("/update/<int:id>", methods=["POST"])
 def update_student(id):
-
     name = request.form.get("name", "").strip()
     student_id = request.form.get("student_id", "").strip()
-
-    if not student_id:
-        student_id = request.form.get("email", "").strip()
-
     course = request.form.get("course", "").strip()
 
     if not name or not student_id or not course:
@@ -150,7 +119,6 @@ def update_student(id):
 # Delete a student
 @app.route("/delete/<int:id>", methods=["POST"])
 def delete_student(id):
-
     conn = get_db()
 
     conn.execute(
@@ -168,6 +136,7 @@ def delete_student(id):
 init_db()
 
 
+# Run the Flask application
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 
