@@ -44,12 +44,15 @@ def index():
 
     conn.close()
 
+    # CHANGE 1:
+    # Send student records to the HTML template
     return render_template("index.html", students=students)
 
 
 # Add a new student
 @app.route("/add", methods=["POST"])
 def add_student():
+
     name = request.form.get("name", "").strip()
     student_id = request.form.get("student_id", "").strip()
     course = request.form.get("course", "").strip()
@@ -64,7 +67,9 @@ def add_student():
             "INSERT INTO students (name, student_id, course) VALUES (?, ?, ?)",
             (name, student_id, course)
         )
+
         conn.commit()
+
     except sqlite3.IntegrityError:
         conn.close()
         return "Student ID already exists", 400
@@ -77,6 +82,7 @@ def add_student():
 # Update an existing student
 @app.route("/update/<int:id>", methods=["POST"])
 def update_student(id):
+
     name = request.form.get("name", "").strip()
     student_id = request.form.get("student_id", "").strip()
     course = request.form.get("course", "").strip()
@@ -112,6 +118,7 @@ def update_student(id):
 # Delete a student
 @app.route("/delete/<int:id>", methods=["POST"])
 def delete_student(id):
+
     conn = get_db()
 
     conn.execute(
